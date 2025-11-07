@@ -22,6 +22,30 @@ import { WIDGET_USER_PWD } from "@/app/config";
 // type Props = {}
 let currInput = { email: "", name: "" };
 const randomText = () => (Math.random() + 1).toString(36).substring(7);
+
+// 检查是否为有效的邮箱格式
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// 如果不是标准邮箱格式，则添加@test.com后缀
+const formatEmail = (email: string): string => {
+  if (!email) return email; // 如果为空则直接返回
+  if (isValidEmail(email)) {
+    return email;
+  } else {
+    // 如果没有@符号，整个字符串作为用户名
+    if (!email.includes('@')) {
+      return `${email}@test.com`;
+    } else {
+      // 如果有@符号但不是有效邮箱，添加test.com域名
+      const [username] = email.split('@');
+      return `${username}@test.com`;
+    }
+  }
+};
+
 const Login = () => {
   const { t } = useTranslation("widget");
   const dispatch = useDispatch();
@@ -35,7 +59,7 @@ const Login = () => {
   const registerUser = ({ name, email, auto }: { name: string; email: string; auto?: boolean }) => {
     const rand = randomText();
     const _name = auto ? name : `${name}-${rand}`;
-    const _email = auto ? `${name}@${from}` : email;
+    const _email = auto ? `${name}@${from}` : formatEmail(email); // 使用格式化函数处理邮箱
     register({
       widget_id: id,
       name: _name,
@@ -46,11 +70,7 @@ const Login = () => {
   const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
     const form = evt.currentTarget;
-    // 检查格式
-    if (!form?.checkValidity()) {
-      form?.reportValidity();
-      return;
-    }
+    // 移除浏览器自带的验证，我们手动处理
     const data = new FormData(form);
     const name = data.get("username") as string;
     const email = data.get("email") as string;
@@ -109,7 +129,7 @@ const Login = () => {
         <form className="px-4 py-3 flex flex-col gap-2" onSubmit={handleSubmit}>
           {/* input email as username */}
           <Input required placeholder="Name" type="text" name="username" />
-          <Input required placeholder="Email" type="email" name="email" />
+          <Input placeholder="Email (optional)" type="text" name="email" />
           <StyledButton
             style={{ backgroundColor: color, color: fgColor }}
             disabled={isLoading}
