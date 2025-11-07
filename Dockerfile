@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 # 设置工作目录
 WORKDIR /app
 
-# 复制package文件和补丁文件
+# 先复制所有需要文件（package.json, pnpm-lock.yaml 和 patches 目录）
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
 
@@ -15,7 +15,7 @@ COPY patches ./patches
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# 安装依赖
+# 安装依赖（这将应用补丁）
 RUN pnpm install
 
 # 复制源码
