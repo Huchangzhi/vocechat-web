@@ -36,5 +36,3 @@ COPY --from=builder /app/build /usr/share/nginx/html
 # 暴露端口
 EXPOSE 80
 
-# 启动nginx
-CMD ["nginx", "-g", "daemon off;"]
