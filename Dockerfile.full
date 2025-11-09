@@ -37,7 +37,7 @@ FROM privoce/vocechat-server:latest
 # 但是，为了保留 vocechat-server 的所有功能，我们使用 nginx 作为前端代理
 
 # 安装 nginx (如果官方镜像没有的话)
-RUN apk add --no-cache nginx
+# RUN apk add --no-cache nginx
 
 # 复制构建好的前端到 nginx 目录
 COPY --from=frontend-builder /app/build /usr/share/nginx/html
