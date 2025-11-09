@@ -32,5 +32,4 @@ FROM privoce/vocechat-server:latest
 # 复制构建好的前端文件到正确的目录
 COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
-# 启动服务
-CMD ["/home/vocechat-server/vocechat-server", "--port", "3000"]
+# 保持官方的入口点脚本
