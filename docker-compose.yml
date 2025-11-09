@@ -2,22 +2,14 @@ version: '3.8'
 
 services:
   vocechat-server:
-    image: privoce/vocechat-server:latest
-    container_name: vocechat-server
-    ports:
-      - "1114:3000"
-    volumes:
-      - /imchat:/home/vocechat-server/data
-    restart: unless-stopped
-
-  vocechat-web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.full
+    container_name: vocechat-server
     ports:
-      - "80:80"
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      - vocechat-server
+      - "3000:3000"
+    volumes:
+      - ./data:/home/vocechat-server/data
     restart: unless-stopped
+    environment:
+      - RUST_LOG=info

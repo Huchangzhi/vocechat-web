@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Full Stack Docker Image
 
 on:
   push:
@@ -67,10 +67,12 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: privoce/vocechat-web
+        images: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/vocechat-server
+          privoce/vocechat-server-custom
         tags: |
           type=ref,event=branch
-          type=ref=event=pr
+          type=ref,event=pr
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 
@@ -79,7 +81,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./Dockerfile.full
         push: true
         build-args: |
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
@@ -93,10 +95,10 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./Dockerfile.full
         push: false
         build-args: |
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
-        tags: privoce/vocechat-web:pr-${{ github.event.number }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/vocechat-server:pr-${{ github.event.number }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
