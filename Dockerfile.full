@@ -29,40 +29,8 @@ RUN pnpm build
 # 最终镜像 - 从官方服务端镜像开始
 FROM privoce/vocechat-server:latest
 
-# 复制构建好的前端文件，覆盖官方镜像中的前端文件
-# vocechat-server 通常会将前端文件存储在特定的位置，需要查找正确的路径
-# 一般情况下，VoceChat 服务器会把前端文件放在其内部的 web 目录中
-
-# 由于我们不知道 vocechat-server 具体如何存储前端，让我们直接使用一个反向代理方式
-# 但是，为了保留 vocechat-server 的所有功能，我们使用 nginx 作为前端代理
-
-# 安装 nginx (如果官方镜像没有的话)
-# RUN apk add --no-cache nginx
-
-# 复制构建好的前端到 nginx 目录
-COPY --from=frontend-builder /app/build /usr/share/nginx/html
-
-# 复制并配置 nginx，将前端 API 请求代理到 vocechat-server
-RUN rm -f /etc/nginx/sites-enabled/default
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# 暴露端口 3000 (web 界面) 和 3001 (API，如果需要的话)
-EXPOSE 3000
-
-# 创建启动脚本来运行 vocechat-server 和 nginx
-RUN echo '#!/bin/sh\n\
-\n\
-# 启动 vocechat-server 后台运行\n\
-/home/vocechat-server/vocechat-server --port 3001 &\n\
-\n\
-# 等待 vocechat-server 启动\n\
-sleep 5\n\
-\n\
-# 启动 nginx 来提供自定义前端并代理 API 请求\n\
-nginx -g "daemon off;"\n\
-' > /start.sh
-
-RUN chmod +x /start.sh
+# 复制构建好的前端文件到正确的目录
+COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
 # 启动服务
-CMD ["/start.sh"]
+CMD ["/home/vocechat-server/vocechat-server", "--port", "3000"]
