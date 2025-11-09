@@ -59,6 +59,7 @@ jobs:
       run: pnpm build
       env:
         REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
+        REACT_APP_RELEASE: true
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
