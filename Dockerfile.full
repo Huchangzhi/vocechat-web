@@ -11,9 +11,11 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches
 
-# 构建参数 - 允许在构建时设置API URL
+# 构建参数 - 允许在构建时设置API URL和发布标志
 ARG REACT_APP_API_URL
+ARG REACT_APP_RELEASE
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_RELEASE=$REACT_APP_RELEASE
 
 # 安装依赖
 RUN pnpm install
