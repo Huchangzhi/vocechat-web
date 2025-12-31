@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Full Stack Docker Image
 
 on:
   push:
@@ -9,43 +9,66 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        username: hcz1017
+        password: ${{ secrets.DOCKERHUB_PASSWORD || secrets.DOCKERHUB_TOKEN }}
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.14.0
+        run_install: false
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
 
-    - name: Install pnpm
-      run: npm install -g pnpm
+    - name: Get pnpm store directory
+      id: pnpm-store
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          ~/.pnpm-store
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
       run: pnpm install
+      env:
+        PNPM_STORE_PATH: ${{ steps.pnpm-store.outputs.STORE_PATH }}
 
     - name: Build application
       run: pnpm build
       env:
         REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
+        REACT_APP_RELEASE: true
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Login to DockerHub
-      if: github.event_name != 'pull_request'
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD || secrets.DOCKERHUB_TOKEN }}
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: privoce/vocechat-web
+        images: hcz1017/vocechat-server
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -57,10 +80,11 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./Dockerfile.full
         push: true
         build-args: |
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
+          REACT_APP_RELEASE=true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
@@ -71,10 +95,11 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./Dockerfile.full
         push: false
         build-args: |
           REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
-        tags: privoce/vocechat-web:pr-${{ github.event.number }}
+          REACT_APP_RELEASE=true
+        tags: hcz1017/vocechat-server:pr-${{ github.event.number }}
         cache-from: type=gha
         cache-to: type=gha,mode=max

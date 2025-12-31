@@ -1,0 +1,45 @@
+# 构建阶段 - 构建前端
+FROM node:20-alpine AS frontend-builder
+
+# 安装pnpm
+RUN npm install -g pnpm
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制前端项目文件
+COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
+
+# 构建参数 - 允许在构建时设置API URL和发布标志
+ARG REACT_APP_API_URL
+ARG REACT_APP_RELEASE
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_RELEASE=$REACT_APP_RELEASE
+
+# 安装依赖
+RUN pnpm install
+
+# 复制源码
+COPY . .
+
+# 构建应用
+RUN pnpm build
+
+# 最终镜像 - 从官方服务端镜像开始
+FROM privoce/vocechat-server:latest
+
+# 创建数据目录并设置权限
+RUN mkdir -p /home/vocechat-server/data/wwwroot
+
+# 复制构建好的前端文件到正确的目录
+COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
+
+# 创建一个特殊的 hash 文件，确保这是自定义构建，防止服务器自动更新
+RUN echo "custom_build_$(date +%s)" > /home/vocechat-server/data/wwwroot/.hash
+
+# 暴露端口
+EXPOSE 3000
+
+# 启动脚本 - 确保服务器不会自动更新前端
+CMD ["/home/vocechat-server/vocechat-server"]
