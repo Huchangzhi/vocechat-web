@@ -35,5 +35,8 @@ RUN mkdir -p /home/vocechat-server/data/wwwroot
 # 复制构建好的前端文件到正确的目录
 COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
+# 创建一个特殊的 hash 文件，确保这是自定义构建，防止服务器自动更新
+RUN echo "custom_build_$(date +%s)" > /home/vocechat-server/data/wwwroot/.hash
+
 # 暴露端口
 EXPOSE 3000
