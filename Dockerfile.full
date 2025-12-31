@@ -42,4 +42,4 @@ RUN sed -i 's/^\[webclient\]/#\0/g; s/^url = "https:\/\/sh.voce.chat\/web_client
 EXPOSE 3000
 
 # 使用自定义配置文件启动服务器
-CMD ["/home/vocechat-server/vocechat-server", "/home/vocechat-server/config.toml"]
+# CMD ["/home/vocechat-server/vocechat-server", "/home/vocechat-server/config.toml"]
