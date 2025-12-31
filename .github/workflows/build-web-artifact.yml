@@ -1,0 +1,102 @@
+name: Build and Package Web App
+
+on:
+  push:
+    branches: [ main, master, feature/docker-config ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.14.0
+        run_install: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: 'pnpm-lock.yaml'
+
+    - name: Get pnpm store directory
+      id: pnpm-store
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          ~/.pnpm-store
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      run: pnpm install
+      env:
+        PNPM_STORE_PATH: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+
+    - name: Build application
+      run: pnpm build
+      env:
+        REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL || 'http://localhost:3000' }}
+        REACT_APP_RELEASE: true
+
+    - name: Create build timestamp
+      run: |
+        echo $(date) > build-timestamp.txt
+
+    - name: Package build files
+      run: |
+        cd build
+        zip -r ../vocechat-web-build.zip .
+        cd ..
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vocechat-web-build-${{ github.sha }}
+        path: |
+          vocechat-web-build.zip
+          build-timestamp.txt
+        retention-days: 30
+
+    - name: Create release (only for main branch)
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release ${{ github.run_number }}
+        body: |
+          Release containing the latest build of vocechat-web
+          Commit: ${{ github.sha }}
+          Build time: $(cat build-timestamp.txt)
+        draft: false
+        prerelease: false
+
+    - name: Upload release asset
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./vocechat-web-build.zip
+        asset_name: vocechat-web-build.zip
+        asset_content_type: application/zip
