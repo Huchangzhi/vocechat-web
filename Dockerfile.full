@@ -35,11 +35,8 @@ RUN mkdir -p /home/vocechat-server/data/wwwroot
 # 复制构建好的前端文件到正确的目录
 COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
-# 修改配置文件，注释掉 webclient 部分以禁用前端自动更新
-RUN sed -i 's/^\[webclient\]/#\0/g; s/^url = "https:\/\/sh.voce.chat\/web_client\/v0.4.x"/#&/g' /home/vocechat-server/config/config.toml
+# 修改配置文件，只注释掉 webclient 的 url 部分，保留 [webclient] 部分
+RUN sed -i 's/^url = "https:\/\/sh.voce.chat\/web_client\/v0.4.x"/#&/g' /home/vocechat-server/config/config.toml
 
 # 暴露端口
 EXPOSE 3000
-
-# 使用自定义配置文件启动服务器
-# CMD ["/home/vocechat-server/vocechat-server", "/home/vocechat-server/config.toml"]
