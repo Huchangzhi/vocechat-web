@@ -52,6 +52,36 @@ For more server hosting instructions, see our documentation: https://doc.voce.ch
 
 - Open `localhost:3009`
 
+## Build and Package
+
+### GitHub Actions
+We provide GitHub Actions workflows to build and package the application:
+
+1. **Full Stack Docker Image**: Automatically builds a Docker image containing both frontend and backend
+   - Workflow file: `.github/workflows/docker-build.yml`
+   - Triggers on push to main/master branches
+
+2. **Web App Artifact**: Builds the frontend and packages it as a zip file for manual deployment
+   - Workflow file: `.github/workflows/build-web-artifact.yml`
+   - Creates downloadable zip artifacts with the built frontend
+   - Triggers on push to main/master/feature/docker-config branches
+
+### Local Build
+To build locally and create a zip package:
+
+```bash
+# Make the script executable
+chmod +x build-web.sh
+
+# Run the build script
+./build-web.sh
+
+# Or with a custom API URL
+REACT_APP_API_URL=https://your-vocechat-server.com ./build-web.sh
+```
+
+The script will create a `vocechat-web-build-[timestamp].zip` file containing the built frontend.
+
 ### Tools Recommended
 
 - [VS Code](https://code.visualstudio.com/) Editor Recommended
