@@ -29,7 +29,11 @@ RUN pnpm build
 # 最终镜像 - 从官方服务端镜像开始
 FROM privoce/vocechat-server:latest
 
+# 创建数据目录并设置权限
+RUN mkdir -p /home/vocechat-server/data/wwwroot
+
 # 复制构建好的前端文件到正确的目录
 COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
-# 保持官方的入口点脚本
+# 暴露端口
+EXPOSE 3000
