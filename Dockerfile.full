@@ -35,8 +35,11 @@ RUN mkdir -p /home/vocechat-server/data/wwwroot
 # 复制构建好的前端文件到正确的目录
 COPY --from=frontend-builder /app/build /home/vocechat-server/data/wwwroot
 
-# 创建一个特殊的 hash 文件，确保这是自定义构建，防止服务器自动更新
-RUN echo "custom_build_$(date +%s)" > /home/vocechat-server/data/wwwroot/.hash
+# 创建自定义配置文件，禁用前端自动更新
+RUN echo '[system]\ndata_dir = "/home/vocechat-server/data"\ntoken_expiry_seconds = 300\nrefresh_token_expiry_seconds = 604800\nmagic_token_expiry_seconds = 900\nupload_avatar_limit = 524288\nsend_image_limit = 2097152\nupload_timeout_seconds = 300\nfile_expiry_days = 270\nmax_favorite_archives = 100\n\n[network]\ndomain = []\nbind = "0.0.0.0:3000"\nfrontend_url = ""\n\n# 禁用前端自动更新功能\nwebclient_url = ""\n' > /home/vocechat-server/config.toml
 
 # 暴露端口
 EXPOSE 3000
+
+# 使用自定义配置文件启动服务器
+CMD ["/home/vocechat-server/vocechat-server", "/home/vocechat-server/config.toml"]
